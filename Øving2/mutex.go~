@@ -22,7 +22,7 @@ func adding(){
 	}
 
 func subtracting(){
-	for j := 0; j <= 1000000; j++{
+	for j := 0; j <= 1000001; j++{
 		<- buffer 	
 		sum--
 		buffer <- 1
