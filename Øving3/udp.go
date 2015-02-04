@@ -1,66 +1,75 @@
-
 package main
 
 import (
 	"net"
 	"fmt"
 	"runtime"
+	"os"
 )
 
-const(
-	recieve_port = ":30000"
-	send_port = ":20003"
-	my_IP = "129.241.187.150"
-	server_IP = "129.241.187.136"
-)
+const MY_IP= "129.241.187.150"
+const TARGET_IP = "129.241.187.255"
+const TARGET_PORT = "20006"
+const LISTEN_PORT = "30000"
 
-func recieve(){
+func ConnectTo(ipAdr string, port string){
+	serverAddr, err := net.ResolveUDPAddr("udp",ipAdr+":"+port)
+	checkError(err)
 
-	buffer := make([]byte, 1024)
+	con, err := net.DialUDP("udp", nil, serverAddr)
+	checkError(err)
+	
+	stop := 0
+		
+	
+	for stop !=-1{
+		input := ""
+		fmt.Scanf("%s",&input)
+		if input=="stop"{
+			stop=-1
+		}
+		con.Write([]byte(input+"\x00"))
+		
+	}
+	fmt.Println("Closing UDP sender...")
+}
+func ListenerCon(port string){
+	serverAddr, err := net.ResolveUDPAddr("udp",":"+port)
+	checkError(err)
 
+	psock, err := net.ListenUDP("udp4", serverAddr)
+	checkError(err)
 
-	addr, _ := net.ResolveUDPAddr("udp",send_port)
-	sock, _ := net.ListenUDP("udp", addr)
+	buf := make([]byte,1024)
+ 
+  	for {
+		fmt.Println("Listening...") 
+    		_, remoteAddr, err := psock.ReadFromUDP(buf)
+		checkError(err)
+    		if remoteAddr.IP.String() != MY_IP {
+			fmt.Printf("%s\n",buf)
+		}
+	 }	
+		
+}
 
-	for{
-		_, _,error := sock.ReadFromUDP(buffer)
-		if error != nil{
-			fmt.Println(error)
-		}S
-		fmt.Println(string(buffer[:]))
+func checkError(err error) {
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Fatal error ", err.Error())
+		os.Exit(1)
 	}
 }
 
-func transmit(){
-
-	addr, err := net.ResolveUDPAddr("udp", server_IP+send_port)
-	handleError(err)
-
-	sock, err := net.DialUDP("udp",nil,addr)
-	handleError(err)
-
-	message := ""
-	fmt.Scanf("%s", &message)
-
-	n, err := sock.Write([]byte(message+"\x00"))
-	handleError(err)
-
-	fmt.Println("På en skala fra 1 til teit er jeg: ", n)
-
-}
-
-func handleError(err error){
-	if err != nil{
-		fmt.Println(err)
-	}
-}
-
-func main(){
+func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	transmit()
 
-	recieve()
+	go ListenerCon(LISTEN_PORT)
 
+	go ConnectTo(TARGET_IP,TARGET_PORT)
+	go ListenerCon(TARGET_PORT)
+	
+	deadChan := make(chan int)
+	<-deadChan
 }
 
