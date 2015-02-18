@@ -26,7 +26,7 @@ func recieve(){
 		_, _,error := sock.ReadFromUDP(buffer)
 		if error != nil{
 			fmt.Println(error)
-		}
+		}S
 		fmt.Println(string(buffer[:]))
 	}
 }
